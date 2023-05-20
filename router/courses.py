@@ -9,7 +9,6 @@ class Payload(BaseModel):
 router = APIRouter(prefix="/courses", tags=["courses"])
 
 COURSES_FILE = 'courses.json'
-ENROLLMENTS_FILE = 'enrollments.json'
 
 def read_json(filename: str) -> str:
     with open(filename, 'r') as f:
@@ -38,7 +37,6 @@ class Course:
                 }
                 for day_of_week, class_periods in self.class_schedule
             ]
-            #'class_schedule': self.class_schedule
         }
 
     @classmethod
@@ -64,16 +62,15 @@ class Course:
 
 @router.get("/{course_id}")
 async def get_courses(course_id: int):
-    courses = Course.from_json('courses.json')
+    courses = Course.from_json(COURSES_FILE)
     course_id = course_id - 1
     course_dict = courses[course_id].to_dict()
     json_string = json.dumps(course_dict, separators=(',', ':'), ensure_ascii=False)
-    print(json_string)
     return Response(content=json_string.replace('\\', ''), media_type='application/json')
 
 @router.post("/{course_id}/update_name")  #[{"day_of_week":"1","class_periods":[2,3,4]},{"day_of_week":"4","class_periods":[5,6,7]}]
 async def update_courses(course_id: int, name: str = Body(...)):
-    courses = Course.from_json('courses.json')
+    courses = Course.from_json(COURSES_FILE)
     course_id = course_id - 1
     print(name)
     courses[course_id].name = name
@@ -83,13 +80,10 @@ async def update_courses(course_id: int, name: str = Body(...)):
 
 @router.post("/{course_id}/update_schedule")
 async def update_courses_schedule(course_id: int, class_schedule_tmp: List[Dict[str, Any]]):
-    courses = Course.from_json('courses.json')
+    courses = Course.from_json(COURSES_FILE)
     course_id = course_id - 1
     courses[course_id].class_schedule = []
     for classes in class_schedule_tmp:
         courses[course_id].class_schedule.append((classes['day_of_week'], classes['class_periods']))
-
-    # courses[course_id].class_schedule = [classes['day_of_week'], classes['class_periods'] for classes in class_schedule_tmp]
-    #courses[course_id].class_schedule =
     write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)
     return Response(content='{"status": "success"}', media_type='application/json')

@@ -1,1 +1,49 @@
-{"courses": [{"id": 1, "name": "Introduction to Python", "class_schedule": [{"day_of_week": "Monday", "class_periods": [1, 2, 3]}, {"day_of_week": "Thursday", "class_periods": [4, 5, 6]}]}, {"id": 2, "name": "hello", "class_schedule": [{"day_of_week": "Monday", "class_periods": [1, 2, 3, 4]}, {"day_of_week": "Thursday", "class_periods": [5, 6, 7]}]}]}
+{
+  "courses": [
+    {
+      "id": 1,
+      "name": "Introduction to Python",
+      "class_schedule": [
+        {
+          "day_of_week": "Monday",
+          "class_periods": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "day_of_week": "Thursday",
+          "class_periods": [
+            4,
+            5,
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "hello",
+      "class_schedule": [
+        {
+          "day_of_week": "Monday",
+          "class_periods": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "day_of_week": "Thursday",
+          "class_periods": [
+            5,
+            6,
+            7
+          ]
+        }
+      ]
+    }
+  ]
+}
