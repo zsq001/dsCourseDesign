@@ -21,15 +21,17 @@ def write_json(data: dict, filename: str) -> None:
 
 
 class Course:
-    def __init__(self, id, name, class_schedule):
+    def __init__(self, id, name, required, class_schedule):
         self.id = id
         self.name = name
+        self.required = required
         self.class_schedule = class_schedule
 
     def to_dict(self):
         return {
             'id': self.id,
             'name': self.name,
+            'required': self.required,
             'class_schedule': [
                 {
                     'day_of_week': day_of_week,
@@ -48,6 +50,7 @@ class Course:
         for course_data in data['courses']:
             id = course_data['id']
             name = course_data['name']
+            required = course_data['required']
             class_schedule = []
 
             for schedule in course_data['class_schedule']:
@@ -55,7 +58,7 @@ class Course:
                 class_periods = schedule['class_periods']
                 class_schedule.append((day_of_week, class_periods))
 
-            courses.append(cls(id, name, class_schedule))
+            courses.append(cls(id, name, required, class_schedule))
 
         return courses
 
@@ -68,13 +71,21 @@ async def get_courses(course_id: int):
     json_string = json.dumps(course_dict, separators=(',', ':'), ensure_ascii=False)
     return Response(content=json_string.replace('\\', ''), media_type='application/json')
 
-@router.post("/{course_id}/update_name")  #[{"day_of_week":"1","class_periods":[2,3,4]},{"day_of_week":"4","class_periods":[5,6,7]}]
+@router.post("/{course_id}/update_name")
 async def update_courses(course_id: int, name: str = Body(...)):
     courses = Course.from_json(COURSES_FILE)
     course_id = course_id - 1
     print(name)
     courses[course_id].name = name
     print(courses[course_id].name)
+    write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)
+    return Response(content='{"status": "success"}', media_type='application/json')
+
+@router.post("/{course_id}/update_required")
+async def update_courses_required(course_id: int, required: bool = Body(...)):
+    courses = Course.from_json(COURSES_FILE)
+    course_id = course_id - 1
+    courses[course_id].required = required
     write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)
     return Response(content='{"status": "success"}', media_type='application/json')
 

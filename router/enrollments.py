@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Cookie, HTTPException, Response, Body
 from typing import List, Optional, Dict, Any, Union
 import json
+from .courses import Course
 
 router = APIRouter(prefix="/enrollments", tags=["enrollments"])
 
 ENROLLMENTS_FILE = 'enrollments.json'
+COURSES_FILE = 'courses.json'
+
 
 def read_json(filename: str) -> str:
     with open(filename, 'r') as f:
@@ -57,5 +60,35 @@ async def update_course(student_id: int, course_id: List[int]):
             enrollment.course_id = course_id
             write_json({'students': [enrollment.to_dict() for enrollment in enrollments]}, ENROLLMENTS_FILE)
             return enrollment.to_dict()
+
+    raise HTTPException(status_code=404, detail="Student not found")
+
+@router.get("/{student_id}/required_class")
+async def required_class(student_id: int):
+    enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
+    tmp = []
+    for enrollment in enrollments:
+        if enrollment.id == student_id:
+            for courseid in enrollment.course_id:
+                courses = Course.from_json(COURSES_FILE)
+                courseid = courseid - 1
+                if courses[courseid].required:
+                    tmp.append(courses[courseid].id)
+            return tmp
+
+    raise HTTPException(status_code=404, detail="Student not found")
+
+@router.get("/{student_id}/optional_class")
+async def required_class(student_id: int):
+    enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
+    tmp = []
+    for enrollment in enrollments:
+        if enrollment.id == student_id:
+            for courseid in enrollment.course_id:
+                courses = Course.from_json(COURSES_FILE)
+                courseid = courseid - 1
+                if not courses[courseid].required:
+                    tmp.append(courses[courseid].id)
+            return tmp
 
     raise HTTPException(status_code=404, detail="Student not found")

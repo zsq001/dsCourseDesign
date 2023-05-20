@@ -3,6 +3,7 @@
     {
       "id": 1,
       "name": "Introduction to Python",
+      "required": true,
       "class_schedule": [
         {
           "day_of_week": "Monday",
@@ -24,7 +25,8 @@
     },
     {
       "id": 2,
-      "name": "hello",
+      "name": "math",
+      "required": true,
       "class_schedule": [
         {
           "day_of_week": "Monday",
