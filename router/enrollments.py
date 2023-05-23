@@ -49,7 +49,7 @@ class Enrollment:
 @router.get("/")
 async def get_enrollments(request: Request, student_id: int = None):
     user = util.getUser(request)
-    if user == 'admin':
+    if user == 0:
         user = student_id
     enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
     for enrollment in enrollments:
@@ -61,7 +61,7 @@ async def get_enrollments(request: Request, student_id: int = None):
 async def update_course(request: Request, course_id: List[int], student_id: int = None):
     user = util.getUser(request)
     enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
-    if user == 'admin':
+    if user == 0:
         user = student_id
     for enrollment in enrollments:
         if enrollment.id == user:
@@ -77,7 +77,7 @@ async def required_class(request: Request, student_id: int = None):
     enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
     user = util.getUser(request)
     tmp = []
-    if user == 'admin':
+    if user == 0:
         user = student_id
     for enrollment in enrollments:
         if enrollment.id == user:
@@ -96,7 +96,7 @@ async def required_class(request: Request, student_id: int = None):
     user = util.getUser(request)
     enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
     tmp = []
-    if user == 'admin':
+    if user == 0:
         user = student_id
     for enrollment in enrollments:
         if enrollment.id == user:

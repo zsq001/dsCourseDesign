@@ -29,7 +29,7 @@ def write_json(data: dict, filename: str) -> None:
 
 def checkAdmin(request: Request):
     user = request.cookies.get("user")
-    if user != 'admin':
+    if user != 0:
         raise HTTPException(status_code=401, detail="Unauthenticated")
     return user
 
