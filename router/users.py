@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 router = APIRouter()
 
+
 class HashTable:
     def __init__(self, capacity=10):
         self.capacity = capacity
@@ -45,6 +46,15 @@ with open('user.txt') as f:
         userTable.set(username, password)
 
 
+@router.get("/register")
+def register(username: str, password: str):
+    userTable.set(username, password)
+    with open('user.txt', 'a') as f:
+        f.write(f'{username}:{password}\n')
+
+    return {"message": "Register success"}
+
+
 @router.get("/login")
 def login(username: str, password: str, response: Response):
     try:
@@ -55,6 +65,7 @@ def login(username: str, password: str, response: Response):
             return {"message": "Login failed"}
     except KeyError:
         return {"message": "Login failed"}
+
 
 @router.get("/logout")
 def logout(response: Response):

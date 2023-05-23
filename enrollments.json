@@ -1,1 +1,27 @@
-{"students": [{"id": 1, "course_id": [1,2]}, {"id": 2, "course_id": [1]}, {"id": 3, "course_id": [2]}, {"id": 4, "course_id": []}]}
+{
+  "students": [
+    {
+      "id": 2021211200,
+      "course_id": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": 2021211201,
+      "course_id": [
+        1
+      ]
+    },
+    {
+      "id": 3,
+      "course_id": [
+        2
+      ]
+    },
+    {
+      "id": 4,
+      "course_id": []
+    }
+  ]
+}
