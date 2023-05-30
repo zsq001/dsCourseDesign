@@ -1,8 +1,11 @@
 # router/users.py
 
 from fastapi import APIRouter, Request, Response
+import logging
 
 router = APIRouter()
+
+logger = logging.getLogger("daily")
 
 
 class HashTable:
@@ -51,7 +54,7 @@ def register(username: str, password: str):
     userTable.set(username, password)
     with open('user.txt', 'a') as f:
         f.write(f'{username}:{password}\n')
-
+    logger.info(f"Register success: {username}")
     return {"message": "Register success"}
 
 
@@ -60,6 +63,7 @@ def login(username: str, password: str, response: Response):
     try:
         if userTable.get(username) == password:
             response.set_cookie(key="user", value=username, max_age=86400)
+            logger.info(f"Login success: {username}")
             return {"message": "Login success"}
         else:
             return {"message": "Login failed"}
@@ -68,6 +72,8 @@ def login(username: str, password: str, response: Response):
 
 
 @router.get("/logout")
-def logout(response: Response):
+def logout(request: Request, response: Response):
+    username = request.cookies.get("user")
     response.delete_cookie(key="user")
+    logger.info(f"Logout success: {username}")
     return {"message": "Logout success"}

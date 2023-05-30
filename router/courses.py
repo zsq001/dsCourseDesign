@@ -1,14 +1,20 @@
 from fastapi import APIRouter, HTTPException, Request, Response, Body
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 import json
 import util
+import logging
+
+logger = logging.getLogger("daily")
 
 
 class Payload(BaseModel):
     name: str = ""
     required: bool = False
     class_schedule: List[Dict[str, Any]] = []
+    exam_time: str = ""
+    exam_place: str = ""
+    class_place: str = ""
 
 
 router = APIRouter(prefix="/courses", tags=["courses"])
@@ -29,17 +35,33 @@ def write_json(data: dict, filename: str) -> None:
 
 def checkAdmin(request: Request):
     user = request.cookies.get("user")
-    if user != 0:
+    print(user)
+    if user != "0":
         raise HTTPException(status_code=401, detail="Unauthenticated")
     return user
 
 
+class class_schedule(BaseModel):
+    day_of_week: str = ""
+    class_periods: List[int] = []
+
+
+class Update(BaseModel):
+    course_id: int
+    type_id: int
+    value: str = None
+    class_schedule_tmp: List[Dict[str, Any]] = None
+
+
 class Course:
-    def __init__(self, id, name, required, class_schedule):
+    def __init__(self, id, name, required, class_schedule, exam_time, exam_place, class_place):
         self.id = id
         self.name = name
         self.required = required
         self.class_schedule = class_schedule
+        self.exam_time = exam_time
+        self.exam_place = exam_place
+        self.class_place = class_place
 
     def to_dict(self):
         return {
@@ -52,7 +74,10 @@ class Course:
                     'class_periods': class_periods
                 }
                 for day_of_week, class_periods in self.class_schedule
-            ]
+            ],
+            'exam_time': self.exam_time,
+            'exam_place': self.exam_place,
+            'class_place': self.class_place
         }
 
     @classmethod
@@ -65,6 +90,9 @@ class Course:
             id = course_data['id']
             name = course_data['name']
             required = course_data['required']
+            exam_time = course_data['exam_time']
+            exam_place = course_data['exam_place']
+            class_place = course_data['class_place']
             class_schedule = []
 
             for schedule in course_data['class_schedule']:
@@ -72,7 +100,7 @@ class Course:
                 class_periods = schedule['class_periods']
                 class_schedule.append((day_of_week, class_periods))
 
-            courses.append(cls(id, name, required, class_schedule))
+            courses.append(cls(id, name, required, class_schedule, exam_time, exam_place, class_place))
 
         return courses
 
@@ -87,36 +115,35 @@ async def get_courses(request: Request, course_id: int):
     return Response(content=json_string.replace('\\', ''), media_type='application/json')
 
 
-@router.post("/{course_id}/update_name")
-async def update_courses(request: Request, course_id: int, name: str = Body(...)):
+@router.put("/update/")
+async def update(request: Request, update_req: Update):
     checkAdmin(request)
     courses = Course.from_json(COURSES_FILE)
-    course_id = course_id - 1
-    print(name)
-    courses[course_id].name = name
-    print(courses[course_id].name)
-    write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)
-    return Response(content='{"status": "success"}', media_type='application/json')
+    course_id = update_req.course_id - 1
+    course_id_str = str(course_id)
+    if update_req.type_id == 1:
+        courses[course_id].name = update_req.value
 
-
-@router.post("/{course_id}/update_required")
-async def update_courses_required(request: Request, course_id: int, required: bool = Body(...)):
-    checkAdmin(request)
-    courses = Course.from_json(COURSES_FILE)
-    course_id = course_id - 1
-    courses[course_id].required = required
-    write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)
-    return Response(content='{"status": "success"}', media_type='application/json')
-
-
-@router.post("/{course_id}/update_schedule")
-async def update_courses_schedule(request: Request, course_id: int, class_schedule_tmp: List[Dict[str, Any]]):
-    checkAdmin(request)
-    courses = Course.from_json(COURSES_FILE)
-    course_id = course_id - 1
-    courses[course_id].class_schedule = []
-    for classes in class_schedule_tmp:
-        courses[course_id].class_schedule.append((classes['day_of_week'], classes['class_periods']))
+        logger.info('Updated class ' + course_id_str + ' name to ' + update_req.value)
+    elif update_req.type_id == 2:
+        courses[course_id].required = update_req.value
+        logger.info('Updated class ' + course_id_str + ' required to ' + update_req.value)
+    elif update_req.type_id == 3:
+        courses[course_id].class_schedule = []
+        for schedule in update_req.class_schedule_tmp:
+            day_of_week = schedule['day_of_week']
+            class_periods = schedule['class_periods']
+            courses[course_id].class_schedule.append((day_of_week, class_periods))
+        logger.info('Updated class ' + course_id_str + ' class_schedule ')
+    elif update_req.type_id == 4:
+        courses[course_id].exam_time = update_req.value
+        logger.info('Updated class ' + course_id_str + ' exam time to ' + update_req.value)
+    elif update_req.type_id == 5:
+        courses[course_id].exam_place = update_req.value
+        logger.info('Updated class ' + course_id_str + ' exam place to ' + update_req.value)
+    elif update_req.type_id == 6:
+        courses[course_id].class_place = update_req.value
+        logger.info('Updated class ' + course_id_str + ' class place to ' + update_req.value)
     write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)
     return Response(content='{"status": "success"}', media_type='application/json')
 
@@ -125,7 +152,8 @@ async def update_courses_schedule(request: Request, course_id: int, class_schedu
 async def add_course(request: Request, payload: Payload):
     checkAdmin(request)
     courses = Course.from_json(COURSES_FILE)
-    courses.append(Course(len(courses) + 1, payload.name, payload.required, []))
+    courses.append(Course(len(courses) + 1, payload.name, payload.required, [], payload.exam_time, payload.exam_place,
+                          payload.class_place))
     for classes in payload.class_schedule:
         courses[len(courses) - 1].class_schedule.append((classes['day_of_week'], classes['class_periods']))
     write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)

@@ -1,7 +1,27 @@
 import json
 from fastapi import APIRouter, Request, HTTPException
 from typing import List, Dict, Any
+from pydantic import BaseModel
 import util
+import logging
+
+tags_metadata = [
+    {
+        "name": "add_schedule",
+        "description": "传入List[Dict[str, Any]]，(Optional)admin_person_id: str",
+    },
+    {
+        "name": "get_schedule",
+        "description": "传入(Optional)admin_person_id: str",
+    },
+    {
+        "name": "delete_schedule",
+        "description": "传入(Optional)admin_person_id: str",
+    }
+
+]
+
+logger = logging.getLogger("daily")
 
 router = APIRouter(prefix="/schedule", tags=["schedule"])
 
@@ -66,11 +86,12 @@ def save_schedules():
         json.dump(data, file)
 
 
-@router.get("/")
+@router.get("/", tags=["get_schedule"])
 def get_schedule(request: Request, admin_person_id: str = None):
     person_id = util.getUser(request)
     if person_id == 0:
         person_id = admin_person_id
+    logger.info(f"got schedule for {person_id}")
     index = hash_function(person_id)
     current = hash_table[index]
     tmp = []
@@ -80,22 +101,51 @@ def get_schedule(request: Request, admin_person_id: str = None):
         current = current.next
     if tmp:
         return tmp
-    return {"message": "Person not found"}
+    raise HTTPException(status_code=404, detail="user not found")
 
 
-@router.post("/")
-def add_schedule(request: Request, schedule: List[Dict[str, Any]], admin_person_id: str = None):
+class add_schedule(BaseModel):
+    schedule: List[Dict[str, Any]]
+    admin_person_id: str = None
+
+
+@router.post("/add_schedule", tags=["add_schedule"])
+def add_schedule(request: Request, addschedule: add_schedule):
     person_id = util.getUser(request)
     if person_id == 0:
-        person_id = admin_person_id
-    print(person_id)
+        person_id = addschedule.admin_person_id
     index = hash_function(person_id)
+    logger.info(f"added schedule for {person_id}")
     if not hash_table[index]:
-        hash_table[index] = Schedule(person_id, schedule)
+        hash_table[index] = Schedule(person_id, addschedule.schedule)
     else:
         current = hash_table[index]
         while current.next:
             current = current.next
-        current.next = Schedule(person_id, schedule)
+        current.next = Schedule(person_id, addschedule.schedule)
 
     return {"message": "Schedule added successfully"}
+
+
+def fuzzy_search_schedule(query, person_id):  # Not Ready!
+    with open('schedules.json') as file:
+        data = json.load(file)
+    results = []
+    for schedule in data[person_id]:
+        if query.lower() in schedule['name'].lower():  # 使用名称进行模糊匹配
+            results.append(schedule)
+    return results
+
+
+class search_schedule(BaseModel):
+    query: str
+    admin_person_id: str = None
+
+
+@router.get("/search")  # Not Ready!
+def search_schedule(request: Request, search: search_schedule):
+    person_id = util.getUser(request)
+    if person_id == 0:
+        person_id = search.admin_person_id
+    results = fuzzy_search_schedule(search.query, person_id)
+    return {"results": results}
