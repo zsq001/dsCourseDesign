@@ -36,9 +36,11 @@ json_file = "schedules.json"
 
 
 class Schedule:
-    def __init__(self, person_id, schedule):
+    def __init__(self, person_id, schedule, starts, ends):
         self.person_id = person_id
         self.schedule = schedule
+        self.starts = starts
+        self.ends = ends
         self.next = None
 
 
@@ -127,25 +129,27 @@ def add_schedule(request: Request, addschedule: add_schedule):
     return {"message": "Schedule added successfully"}
 
 
-def fuzzy_search_schedule(query, person_id):  # Not Ready!
+def fuzzy_search_schedule(query, person_id, types):
     with open('schedules.json') as file:
         data = json.load(file)
     results = []
     for schedule in data[person_id]:
-        if query.lower() in schedule['name'].lower():  # 使用名称进行模糊匹配
+        if query.lower() in schedule[types].lower():  # 使用名称进行模糊匹配
             results.append(schedule)
     return results
 
 
-class search_schedule(BaseModel):
+class search_schedule(BaseModel):  # type-name/starts/ends
+    types: str
     query: str
     admin_person_id: str = None
 
 
-@router.get("/search")  # Not Ready!
+@router.get("/search")
 def search_schedule(request: Request, search: search_schedule):
     person_id = util.getUser(request)
     if person_id == 0:
         person_id = search.admin_person_id
-    results = fuzzy_search_schedule(search.query, person_id)
+    results = fuzzy_search_schedule(search.query, person_id, search.types)
+    logger.info(f"searched schedule for {person_id}")
     return {"results": results}

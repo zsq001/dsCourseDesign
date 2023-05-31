@@ -1,1 +1,16 @@
-{"2021211200": [{"name": "Monday", "class_periods": "hamu"}, {"day_of_week": "bduiuqewbfb", "class_periods": "qewqewqu"}]}
+{
+  "2021211200": [
+    {
+      "name": "bonday",
+      "periods": "hamu",
+      "starts": "2021-01-22T12:00:00+00:00",
+      "ends": "2021-01-21T13:00:00+00:00"
+    },
+    {
+      "name": "bduiuqewbfb",
+      "periods": "qewqewqu",
+      "starts": "2021-01-21T12:00:00+00:00",
+      "ends": "2021-01-22T13:00:00+00:00"
+    }
+  ]
+}
