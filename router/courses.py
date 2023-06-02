@@ -54,7 +54,7 @@ class Update(BaseModel):
 
 
 class Course:
-    def __init__(self, id, name, required, class_schedule, exam_time, exam_place, class_place):
+    def __init__(self, id, name, required, class_schedule, exam_time, exam_place, class_place, single):
         self.id = id
         self.name = name
         self.required = required
@@ -62,6 +62,7 @@ class Course:
         self.exam_time = exam_time
         self.exam_place = exam_place
         self.class_place = class_place
+        self.single = single
 
     def to_dict(self):
         return {
@@ -77,7 +78,8 @@ class Course:
             ],
             'exam_time': self.exam_time,
             'exam_place': self.exam_place,
-            'class_place': self.class_place
+            'class_place': self.class_place,
+            'single': self.single
         }
 
     @classmethod
@@ -93,6 +95,7 @@ class Course:
             exam_time = course_data['exam_time']
             exam_place = course_data['exam_place']
             class_place = course_data['class_place']
+            single = course_data['single']
             class_schedule = []
 
             for schedule in course_data['class_schedule']:
@@ -100,7 +103,7 @@ class Course:
                 class_periods = schedule['class_periods']
                 class_schedule.append((day_of_week, class_periods))
 
-            courses.append(cls(id, name, required, class_schedule, exam_time, exam_place, class_place))
+            courses.append(cls(id, name, required, class_schedule, exam_time, exam_place, class_place, single))
 
         return courses
 

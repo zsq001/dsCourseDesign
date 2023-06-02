@@ -36,11 +36,9 @@ json_file = "schedules.json"
 
 
 class Schedule:
-    def __init__(self, person_id, schedule, starts, ends):
+    def __init__(self, person_id, schedule):
         self.person_id = person_id
         self.schedule = schedule
-        self.starts = starts
-        self.ends = ends
         self.next = None
 
 
@@ -56,7 +54,8 @@ def load_schedules():
     try:
         with open(json_file, "r") as file:
             data = json.load(file)
-            for person_id, schedules in data.items():
+            print(data.items())
+            for person_id, schedules,  in data.items():
                 index = hash_function(person_id)
                 for schedule in schedules:
                     if not hash_table[index]:
@@ -150,6 +149,9 @@ def search_schedule(request: Request, search: search_schedule):
     person_id = util.getUser(request)
     if person_id == 0:
         person_id = search.admin_person_id
-    results = fuzzy_search_schedule(search.query, person_id, search.types)
+    try:
+        results = fuzzy_search_schedule(search.query, person_id, search.types)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="type not found")
     logger.info(f"searched schedule for {person_id}")
     return {"results": results}
