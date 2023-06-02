@@ -55,34 +55,6 @@
       "exam_place": "Room 103",
       "class_place": "Room 203",
       "single": "false"
-    },
-    {
-      "id": 3,
-      "name": "example",
-      "required": true,
-      "class_schedule": [
-        {
-          "day_of_week": "Monday",
-          "class_periods": [
-            1,
-            2,
-            3,
-            4
-          ]
-        },
-        {
-          "day_of_week": "Thursday",
-          "class_periods": [
-            5,
-            6,
-            7
-          ]
-        }
-      ],
-      "exam_time": "2023-12-12T09:00:00Z",
-      "exam_place": "301",
-      "class_place": "302",
-      "single": true
     }
   ]
 }

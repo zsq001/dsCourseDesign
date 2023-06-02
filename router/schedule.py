@@ -3,6 +3,7 @@ from fastapi import APIRouter, Request, HTTPException
 from typing import List, Dict, Any
 from pydantic import BaseModel
 import util
+import re
 import logging
 
 tags_metadata = [
@@ -55,7 +56,7 @@ def load_schedules():
         with open(json_file, "r") as file:
             data = json.load(file)
             print(data.items())
-            for person_id, schedules,  in data.items():
+            for person_id, schedules, in data.items():
                 index = hash_function(person_id)
                 for schedule in schedules:
                     if not hash_table[index]:
@@ -115,6 +116,7 @@ def add_schedule(request: Request, addschedule: add_schedule):
     person_id = util.getUser(request)
     if person_id == 0:
         person_id = addschedule.admin_person_id
+    print(person_id)
     index = hash_function(person_id)
     logger.info(f"added schedule for {person_id}")
     if not hash_table[index]:
@@ -128,29 +130,29 @@ def add_schedule(request: Request, addschedule: add_schedule):
     return {"message": "Schedule added successfully"}
 
 
-def fuzzy_search_schedule(query, person_id, types):
+def fuzzy_search_schedule(query, person_id):
     with open('schedules.json') as file:
         data = json.load(file)
     results = []
-    for schedule in data[person_id]:
-        if query.lower() in schedule[types].lower():  # 使用名称进行模糊匹配
-            results.append(schedule)
+    person_id = str(person_id)
+    if person_id in data:
+        for schedule in data[person_id]:
+            name = schedule["name"]
+            if re.search(query, name, re.IGNORECASE):
+                results.append(schedule)
     return results
-
-
 class search_schedule(BaseModel):  # type-name/starts/ends
-    types: str
     query: str
     admin_person_id: str = None
 
 
-@router.get("/search")
+@router.post("/search")
 def search_schedule(request: Request, search: search_schedule):
     person_id = util.getUser(request)
     if person_id == 0:
         person_id = search.admin_person_id
     try:
-        results = fuzzy_search_schedule(search.query, person_id, search.types)
+        results = fuzzy_search_schedule(search.query, person_id)
     except KeyError:
         raise HTTPException(status_code=404, detail="type not found")
     logger.info(f"searched schedule for {person_id}")
