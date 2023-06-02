@@ -11,5 +11,6 @@ def getUser(request: Request):
         raise HTTPException(status_code=401, detail="Unauthenticated")
     if user == 'admin':
         user = 0
+    user = int(user)
     print(user)
     return user

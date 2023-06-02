@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
 from typing import List
+from pydantic import BaseModel
 import util
 import json
 from .courses import Course
@@ -49,6 +50,7 @@ class Enrollment:
 @router.get("/")
 async def get_enrollments(request: Request, student_id: int = None):
     user = util.getUser(request)
+    print(user)
     if user == 0:
         user = student_id
     enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
@@ -105,6 +107,30 @@ async def required_class(request: Request, student_id: int = None):
                 courseid = courseid - 1
                 if not courses[courseid].required:
                     tmp.append(courses[courseid].id)
+            return tmp
+
+    raise HTTPException(status_code=404, detail="Student not found")
+
+
+class search_payload(BaseModel):
+    student_id: int = None
+    query: str
+
+
+@router.post("/search")
+async def search(request: Request, payload: search_payload):
+    user = util.getUser(request)
+    enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
+    tmp = []
+    if user == 0:
+        user = payload.student_id
+    print(payload.student_id)
+    for enrollment in enrollments:
+        if enrollment.id == payload.query:
+            for courseid in enrollment.course_id:
+                courses = Course.from_json(COURSES_FILE)
+                courseid = courseid - 1
+                tmp.append(courses[courseid].name)
             return tmp
 
     raise HTTPException(status_code=404, detail="Student not found")

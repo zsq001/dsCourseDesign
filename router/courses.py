@@ -15,6 +15,7 @@ class Payload(BaseModel):
     exam_time: str = ""
     exam_place: str = ""
     class_place: str = ""
+    single: bool = False
 
 
 router = APIRouter(prefix="/courses", tags=["courses"])
@@ -156,7 +157,7 @@ async def add_course(request: Request, payload: Payload):
     checkAdmin(request)
     courses = Course.from_json(COURSES_FILE)
     courses.append(Course(len(courses) + 1, payload.name, payload.required, [], payload.exam_time, payload.exam_place,
-                          payload.class_place))
+                          payload.class_place, payload.single))
     for classes in payload.class_schedule:
         courses[len(courses) - 1].class_schedule.append((classes['day_of_week'], classes['class_periods']))
     write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)
