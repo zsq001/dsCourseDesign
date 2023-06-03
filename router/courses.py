@@ -130,6 +130,21 @@ class Course:
 
         return courses
 
+    @staticmethod
+    def search_course_by_name(courses, keyword):
+        matched_courses = []
+        for course in courses:
+            if keyword.lower() in course.name.lower():
+                matched_courses.append(course)
+        return matched_courses
+
+
+@router.get("/")
+async def get_all_courses(request: Request):
+    user = util.getUser(request)
+    courses = Course.from_json(COURSES_FILE)
+    course_list = [course.to_dict() for course in courses]
+    return Response(content=json.dumps(course_list, separators=(',', ':'), ensure_ascii=False), media_type='application/json')
 
 @router.get("/{course_id}")
 async def get_courses(request: Request, course_id: int):
@@ -140,6 +155,15 @@ async def get_courses(request: Request, course_id: int):
     json_string = json.dumps(course_dict, separators=(',', ':'), ensure_ascii=False)
     return Response(content=json_string.replace('\\', ''), media_type='application/json')
 
+
+@router.get("/search/{keyword}")
+async def search_courses(request: Request, keyword: str):
+    user = util.getUser(request)
+    courses = Course.from_json(COURSES_FILE)
+    matched_courses = Course.search_course_by_name(courses, keyword)
+    matched_courses_dict = [course.to_dict() for course in matched_courses]
+    json_string = json.dumps(matched_courses_dict, separators=(',', ':'), ensure_ascii=False)
+    return Response(content=json_string.replace('\\', ''), media_type='application/json')
 
 @router.put("/update/")
 async def update(request: Request, update_req: Update):

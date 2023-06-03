@@ -94,6 +94,7 @@ def get_schedule(request: Request, admin_person_id: str = None):
     if person_id == 0:
         person_id = admin_person_id
     logger.info(f"got schedule for {person_id}")
+    person_id = str(person_id)
     index = hash_function(person_id)
     current = hash_table[index]
     tmp = []
