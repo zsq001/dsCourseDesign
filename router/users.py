@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 import logging
+import util
 
 router = APIRouter()
 
@@ -89,7 +90,8 @@ def add_account(username: str, password: str):
 
 
 @router.get("/delete_account")
-def delete_account(username: str):
+def delete_account(request: Request, username: str):
+    util.getUser(request)
     userTable.delete(username)
     with open('user.txt', 'r') as f:
         lines = f.readlines()
