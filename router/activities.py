@@ -86,7 +86,7 @@ group_activities = load_activities('group_activities.json')
 personal_activities = load_activities('personal_activities.json')
 
 
-@router.get("/")
+@router.get("/{activity_type}")
 def get_activities(request: Request, start_time: datetime = None, end_time: datetime = None, activity_type: str = None,
                    owner: str = None):
     if util.getUser(request) != "0":

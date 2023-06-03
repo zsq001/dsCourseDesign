@@ -109,9 +109,12 @@ def delete_account(request: Request, username: str):
     logger.info(f"Delete success: {username}")
     return {"message": "Delete success"}
 
-@router.get("/get_account")
-def get_account(request: Request):
+@router.get("/get_user")
+def get_users(request: Request):
     util.getUser(request)
-    logger.info(f"Get account success")
-    all_user = userTable.get_all_users()
-    return {"message": "Get account success", "data": all_user}
+    users = []
+    for hash_key in range(userTable.capacity):
+        for pair in userTable.table[hash_key]:
+            users.append({"username": pair[0], "password": pair[1]})
+    logger.info("Get all users")
+    return {"users": users}
