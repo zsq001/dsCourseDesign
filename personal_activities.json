@@ -1,20 +1,28 @@
 {
   "activities": [
     {
-      "id": 2,
-      "name": "Personal Activity 1",
-      "activity_type": "Personal",
-      "start_time": "2023-06-05 15:00",
-      "end_time": "2023-06-05 16:00",
-      "owner": "2021211200"
-    },
-    {
       "id": 4,
       "name": "Personal Activity 2",
       "activity_type": "Personal",
       "start_time": "2023-06-07 20:00",
       "end_time": "2023-06-07 21:00",
       "owner": "2021211201"
+    },
+    {
+      "name": "string",
+      "activity_type": "personal",
+      "start_time": "2023-06-03T13:00:00.000Z",
+      "end_time": "2023-06-03T13:00:00.000Z",
+      "owner": "string",
+      "id": 5
+    },
+    {
+      "name": "string",
+      "activity_type": "personal",
+      "start_time": "2023-06-03T13:00:00.000Z",
+      "end_time": "2023-06-03T13:00:00.000Z",
+      "owner": "string",
+      "id": 6
     }
   ]
 }

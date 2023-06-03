@@ -10,7 +10,7 @@ router = APIRouter(prefix="/activity", tags=["activity"])
 
 
 class Activity(BaseModel):
-    id: int
+    id: int = None
     name: str
     activity_type: str
     start_time: datetime
@@ -25,16 +25,7 @@ def load_activities(file_path):
 
     activities = []
     for activity_data in data['activities']:
-        id = activity_data['id']
-        name = activity_data['name']
-        activity_type = activity_data['activity_type']
-        start_time = datetime.strptime(activity_data['start_time'], '%Y-%m-%d %H:%M')
-        end_time = datetime.strptime(activity_data['end_time'], '%Y-%m-%d %H:%M')
-        owners = activity_data.get('owners')
-        owner = activity_data.get('owner')
-        activities.append(
-            Activity(id=id, name=name, activity_type=activity_type, start_time=start_time, end_time=end_time,
-                     owners=owners, owner=owner))
+        activities.append(activity_data)
 
     return activities
 
@@ -59,15 +50,22 @@ def filter_activities(activities, start_time=None, end_time=None, activity_type=
     return filtered_activities
 
 
+def get_max_activity_id(activities):
+    max_id = 0
+    for activity in activities:
+        if activity['id'] > max_id:
+            max_id = activity['id']
+    return max_id
 
 def sort_activities_by_start_time(activities):
     sorted_activities = sorted(activities, key=lambda x: x.start_time)
     return sorted_activities
 
 
+
 def save_activities(activities, file_path):
     data = {
-        'activities': [activity.dict() for activity in activities]
+        'activities': activities
     }
 
     with open(file_path, 'w') as f:
@@ -102,20 +100,31 @@ def get_activities(request: Request, start_time: datetime = None, end_time: date
 
 
 @router.post("/")
-def create_activity(activity: Activity):
-    validate_activity_time(activity)
-    if activity.activity_type == "Group":
-        group_activities.append(activity)
-        save_activities(group_activities, 'group_activities.json')
-    elif activity.activity_type == "Personal":
-        personal_activities.append(activity)
-        save_activities(personal_activities, 'personal_activities.json')
+def create_activity(activity: dict):
+    max_id = get_max_activity_id(group_activities)
+    activity_type = activity.get('activity_type')
+    if not activity_type or activity_type not in ["group", "personal"]:
+        raise HTTPException(status_code=400, detail="Invalid activity type.")
+    if activity_type == "group":
+        file_path = 'group_activities.json'
+        activities = load_activities(file_path)
+        max_id = get_max_activity_id(activities)
+        activity['id'] = max_id + 1
+    elif activity_type == "personal":
+        file_path = 'personal_activities.json'
+        activities = load_activities(file_path)
+        max_id = get_max_activity_id(activities)
+        activity['id'] = max_id + 1
+
+    activities = load_activities(file_path)
+    activities.append(activity)
+    save_activities(activities, file_path)
 
     return {"message": "Activity created successfully."}
 
 
-@router.delete("/activities/{activity_id}")
-def delete_activity(activity_id: int, activity_type: Optional[str] = None):
+@router.delete("/{activity_type}/{activity_id}")
+def delete_activity(activity_id: int, activity_type: str):
     if activity_type == "group":
         file_path = 'group_activities.json'
     elif activity_type == "personal":

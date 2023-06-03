@@ -10,16 +10,6 @@
         2021211200,
         2021211201
       ]
-    },
-    {
-      "id": 3,
-      "name": "Group Activity 2",
-      "activity_type": "Group",
-      "start_time": "2023-06-06 18:00",
-      "end_time": "2023-06-06 19:00",
-      "owners": [
-        2021211200
-      ]
     }
   ]
 }
