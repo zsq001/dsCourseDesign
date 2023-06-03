@@ -77,3 +77,25 @@ def logout(request: Request, response: Response):
     response.delete_cookie(key="user")
     logger.info(f"Logout success: {username}")
     return {"message": "Logout success"}
+
+
+@router.get("/add_account")
+def add_account(username: str, password: str):
+    userTable.set(username, password)
+    with open('user.txt', 'a') as f:
+        f.write(f'{username}:{password}\n')
+    logger.info(f"Add success: {username}")
+    return {"message": "Add success"}
+
+
+@router.get("/delete_account")
+def delete_account(username: str):
+    userTable.delete(username)
+    with open('user.txt', 'r') as f:
+        lines = f.readlines()
+    with open('user.txt', 'w') as f:
+        for line in lines:
+            if line.split(':')[0] != username:
+                f.write(line)
+    logger.info(f"Delete success: {username}")
+    return {"message": "Delete success"}
