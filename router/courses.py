@@ -22,6 +22,28 @@ router = APIRouter(prefix="/courses", tags=["courses"])
 
 COURSES_FILE = 'courses.json'
 
+max_id = 0
+
+@router.on_event("startup")
+def get_max_course_id():
+    global max_id
+    with open("max_course_id.txt", 'r') as f:
+        max_id = int(f.read())
+    courses = Course.from_json(COURSES_FILE)
+    max_course_id = 0
+    for i in range(len(courses)):
+        if courses[i].id > max_course_id:
+            max_course_id = courses[i].id
+    if max_id > max_course_id:
+        return
+    else:
+        max_id = max_course_id
+
+@router.on_event("shutdown")
+def save_max_id():
+    global max_id
+    with open("max_course_id.txt", 'w') as f:
+        f.write(str(max_id))
 
 def read_json(filename: str) -> str:
     with open(filename, 'r') as f:
@@ -154,12 +176,14 @@ async def update(request: Request, update_req: Update):
 
 @router.post("/add_course")
 async def add_course(request: Request, payload: Payload):
+    global max_id
     checkAdmin(request)
     courses = Course.from_json(COURSES_FILE)
-    courses.append(Course(len(courses) + 1, payload.name, payload.required, [], payload.exam_time, payload.exam_place,
+    courses.append(Course(max_id+1, payload.name, payload.required, [], payload.exam_time, payload.exam_place,
                           payload.class_place, payload.single))
+    max_id += 1
     for classes in payload.class_schedule:
-        courses[len(courses) - 1].class_schedule.append((classes['day_of_week'], classes['class_periods']))
+        courses[len(courses)-1].class_schedule.append((classes['day_of_week'], classes['class_periods']))
     write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)
     return Response(content='{"status": "success"}', media_type='application/json')
 
@@ -168,9 +192,9 @@ async def add_course(request: Request, payload: Payload):
 async def delete_course(request: Request, course_id: int):
     checkAdmin(request)
     courses = Course.from_json(COURSES_FILE)
-    course_id = course_id - 1
-    courses.pop(course_id)
     for i in range(len(courses)):
-        courses[i].id = i + 1
+        if courses[i].id == course_id:
+            courses.pop(i)
+            break
     write_json({'courses': [course.to_dict() for course in courses]}, COURSES_FILE)
     return Response(content='{"status": "success"}', media_type='application/json')
