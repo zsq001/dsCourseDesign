@@ -1,0 +1,20 @@
+{
+  "activities": [
+    {
+      "id": 2,
+      "name": "Personal Activity 1",
+      "activity_type": "Personal",
+      "start_time": "2023-06-05 15:00",
+      "end_time": "2023-06-05 16:00",
+      "owner": "2021211200"
+    },
+    {
+      "id": 4,
+      "name": "Personal Activity 2",
+      "activity_type": "Personal",
+      "start_time": "2023-06-07 20:00",
+      "end_time": "2023-06-07 21:00",
+      "owner": "2021211201"
+    }
+  ]
+}

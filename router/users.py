@@ -40,6 +40,13 @@ class HashTable:
                 return
         raise KeyError(key)
 
+    def get_all_users(self):
+        all_users = []
+        for bucket in self.table:
+            for pair in bucket:
+                all_users.append(pair)
+        return all_users
+
 
 userTable = HashTable()
 
@@ -101,3 +108,10 @@ def delete_account(request: Request, username: str):
                 f.write(line)
     logger.info(f"Delete success: {username}")
     return {"message": "Delete success"}
+
+@router.get("/get_account")
+def get_account(request: Request):
+    util.getUser(request)
+    logger.info(f"Get account success")
+    all_user = userTable.get_all_users()
+    return {"message": "Get account success", "data": all_user}
