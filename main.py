@@ -1,9 +1,12 @@
 from fastapi import FastAPI, Request, HTTPException
+from datetime import datetime, timedelta
+import util
 from router import users, courses, enrollments, schedule, maps, activities
 from fastapi.responses import FileResponse
 import logging
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import router.courses, router.enrollments
 
 app = FastAPI()
 
@@ -29,6 +32,9 @@ logging.basicConfig(
 
 logger = logging.getLogger("daily")
 
+week = ["","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+
+alarms = []
 
 class TimeSimulator:
     def __init__(self):
@@ -95,6 +101,22 @@ class Time(BaseModel):
     hour: int
 
 
+class Alarm(BaseModel):
+    id: int = None
+    note: str
+    time: str
+    frequency: str
+    user: str = None
+    day: str = None
+    week: str = None
+
+def get_max_id():
+    max_id = 0
+    for alarm in alarms:
+        if alarm.id > max_id:
+            max_id = alarm.id
+    return max_id
+
 @app.put("/set_time")
 def set_time(time: Time):
     try:
@@ -102,3 +124,92 @@ def set_time(time: Time):
         return {"message": "success"}
     except HTTPException as e:
         raise e
+
+
+def course_alarm(user):
+
+    courses = router.courses.Course.from_json("courses.json")
+    enrollments = router.enrollments.Enrollment.from_json("enrollments.json")
+    course_list = []
+    for enrollment in enrollments:
+        if enrollment.id == user:
+            course_list = enrollment.course_id
+    today = week[get_current_day_of_week()]
+    alarm_list = []
+    for course in courses:
+        if course.id in course_list:
+            for schedule in course.class_schedule:
+                print(schedule)
+                if schedule[0] == today:
+                    alarm_list.append(course)
+    if len(alarm_list) == 0:
+        return
+    return alarm_list
+
+
+@app.get("/alarms/")
+def get_alarms(request: Request):
+    user = util.getUser(request)
+    alarm_list = []
+    for alarm in alarms:
+        if alarm.user == user:
+            alarm_list.append(alarm)
+    return alarm_list
+
+@app.post("/alarms/")
+def create_alarm(request: Request, alarm: Alarm):
+    user = util.getUser(request)
+    alarm.id = get_max_id() + 1
+    alarm.user = user
+    alarm.day = time_simulator.current_day
+    alarm.week = time_simulator.current_week
+    alarms.append(alarm)
+    return alarm
+
+@app.get("/alarms/{alarm_id}")
+def get_alarm(request: Request, alarm_id: int):
+    for alarm in alarms:
+        if alarm.id == alarm_id and alarm.user == util.getUser(request):
+            return alarm
+    return {"message": "Alarm not found"}
+
+@app.delete("/alarms/{alarm_id}")
+def delete_alarm(request: Request, alarm_id: int):
+    for alarm in alarms:
+        if alarm.id == alarm_id and alarm.user == util.getUser(request):
+            alarms.remove(alarm)
+            return {"message": "Alarm deleted"}
+    return {"message": "Alarm not found"}
+
+
+@app.get("/course_today")
+def course_today(request: Request): #get today's course from courses.json
+    user = util.getUser(request)
+    notice = []
+    notice.append(course_alarm(user))
+    return notice
+
+
+@app.get("/ring/")
+def check_alarms(request: Request):
+    ringing_alarms = []
+    time = str(time_simulator.current_hour)
+    for alarm in alarms:
+        print(alarm)
+        print(get_current_day_of_week())
+        print(time)
+        if alarm.user == util.getUser(request) and alarm.time == time and alarm.frequency == "single" \
+                and alarm.day == get_current_day_of_week() and alarm.week == time_simulator.current_week:
+            ringing_alarms.append(alarm)
+        elif alarm.user == util.getUser(request) and alarm.time == time and alarm.frequency == "daily":
+            ringing_alarms.append(alarm)
+        elif alarm.user == util.getUser(request) and alarm.time == time and alarm.frequency == "weekly" \
+                and alarm.day == get_current_day_of_week():
+            ringing_alarms.append(alarm)
+    return ringing_alarms
+
+
+def get_current_day_of_week():
+    current_day = time_simulator.current_day
+    return current_day % 7
+

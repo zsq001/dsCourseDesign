@@ -6,11 +6,10 @@ import json
 
 router = APIRouter(prefix="/map", tags=["maps"])
 
-
-
 # 读取school_map.json文件
 with open('school_map.json') as file:
     school_map = json.load(file)
+
 
 class min_path_params(BaseModel):
     start_node: str
@@ -39,6 +38,8 @@ def past_nodes(start_node, end_node):
                 start_position = [start_position[0] + 1, start_position[1]]  # 创建新的坐标列表
                 result.append(start_position.copy())  # 添加新的坐标到result列表
     return result
+
+
 @router.post("/min_path")
 async def minPath(params: min_path_params):
     nodes = school_map
