@@ -109,7 +109,8 @@ def delete_account(request: Request, username: str):
     logger.info(f"Delete success: {username}")
     return {"message": "Delete success"}
 
-@router.get("/get_user")
+
+@router.get("/get_all_user")
 def get_users(request: Request):
     util.getUser(request)
     users = []
@@ -118,3 +119,15 @@ def get_users(request: Request):
             users.append({"username": pair[0], "password": pair[1]})
     logger.info("Get all users")
     return {"users": users}
+
+
+@router.get("/get_user")
+def gets_user(request: Request, username: str):
+    util.getUser(request)
+    try:
+        password = userTable.get(username)
+        logger.info(f"Get user: {username}")
+        return {"username": username, "password": password}
+    except KeyError:
+        logger.info(f"Get user failed: {username}")
+        return {"message": "Get user failed"}

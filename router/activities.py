@@ -32,21 +32,18 @@ def load_activities(file_path):
 
 def filter_activities(activities, start_time=None, end_time=None, activity_type=None, owner=None):
     filtered_activities = []
-
     for activity in activities:
-        if start_time and activity.start_time < start_time:
+        if start_time and activity['start_time'] < start_time:
             continue
-        if end_time and activity.end_time > end_time:
+        if end_time and activity['end_time'] > end_time:
             continue
-        if activity_type and activity_type != activity.activity_type:
+        if activity_type and activity['activity_type'] != activity_type:
             continue
-        if owner and activity.owners and (owner not in activity.owners):
+        if activity_type == 'Personal' and owner and activity['owner'] != owner:
             continue
-        if owner and activity.owner and (owner != activity.owner):
+        if activity_type == 'Group' and owner and activity['owners'] and int(owner) not in activity['owners']:
             continue
-
         filtered_activities.append(activity)
-
     return filtered_activities
 
 
@@ -58,7 +55,7 @@ def get_max_activity_id(activities):
     return max_id
 
 def sort_activities_by_start_time(activities):
-    sorted_activities = sorted(activities, key=lambda x: x.start_time)
+    sorted_activities = sorted(activities, key=lambda x: x["start_time"])
     return sorted_activities
 
 
