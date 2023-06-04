@@ -1,20 +1,25 @@
-from typing import Optional
-from fastapi import APIRouter, Query, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from datetime import datetime, timedelta
 import json
-
+from .courses import Course
+from .enrollments import Enrollment
 import util
 
 router = APIRouter(prefix="/activity", tags=["activity"])
+
+COURSES_FILE = 'courses.json'
+ENROLLMENTS_FILE = 'enrollments.json'
+
+week = ["","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+
 
 
 class Activity(BaseModel):
     id: int = None
     name: str
     activity_type: str
-    start_time: datetime
-    end_time: datetime
+    day: str
+    hour: str
     owners: list[str] = None
     owner: str = None
 
@@ -30,13 +35,9 @@ def load_activities(file_path):
     return activities
 
 
-def filter_activities(activities, start_time=None, end_time=None, activity_type=None, owner=None):
+def filter_activities(activities, activity_type=None, owner=None):
     filtered_activities = []
     for activity in activities:
-        if start_time and activity['start_time'] < start_time:
-            continue
-        if end_time and activity['end_time'] > end_time:
-            continue
         if activity_type and activity['activity_type'] != activity_type:
             continue
         if activity_type == 'Personal' and owner and activity['owner'] != owner:
@@ -54,11 +55,6 @@ def get_max_activity_id(activities):
             max_id = activity['id']
     return max_id
 
-def sort_activities_by_start_time(activities):
-    sorted_activities = sorted(activities, key=lambda x: x["start_time"])
-    return sorted_activities
-
-
 
 def save_activities(activities, file_path):
     data = {
@@ -69,35 +65,48 @@ def save_activities(activities, file_path):
         json.dump(data, f)
 
 
-def validate_activity_time(activity):
-    if activity.start_time.hour < 6 or activity.end_time.hour > 22:
-        raise HTTPException(status_code=400, detail="Activity time should be between 6:00 and 22:00.")
-    if activity.start_time.minute != 0 or activity.end_time.minute != 0:
-        raise HTTPException(status_code=400,
-                            detail="Activity start and end time should be at the beginning of the hour.")
-
-
 group_activities = load_activities('group_activities.json')
 personal_activities = load_activities('personal_activities.json')
 
 
 @router.get("/{activity_type}")
-def get_activities(request: Request, start_time: datetime = None, end_time: datetime = None, activity_type: str = None,
+def get_activities(request: Request, activity_type: str = None,
                    owner: str = None):
     if util.getUser(request) != "0":
         owner = str(util.getUser(request))
     print(owner)
-    filtered_group_activities = filter_activities(group_activities, start_time=start_time, end_time=end_time,
-                                                  activity_type=activity_type, owner=owner)
-    filtered_personal_activities = filter_activities(personal_activities, start_time=start_time, end_time=end_time,
-                                                     activity_type=activity_type, owner=owner)
+    filtered_group_activities = filter_activities(group_activities, activity_type=activity_type, owner=owner)
+    filtered_personal_activities = filter_activities(personal_activities, activity_type=activity_type, owner=owner)
     filtered_activities = filtered_group_activities + filtered_personal_activities
-    sorted_activities = sort_activities_by_start_time(filtered_activities)
-    return sorted_activities
+    return filtered_activities
+
+
+def check_conflict(day: int, hour: int, student_id: int):  # student_id course_id
+    courses = Course.from_json(COURSES_FILE)
+    enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
+    stu_course = []
+    for enrollment in enrollments:
+        if enrollment.id == student_id:
+            stu_course = enrollment.course_id
+    for course in stu_course:  # (origin)course compare with (target)course_id
+        for i in courses[course].class_schedule:
+            day=int(day)
+            print(i)
+            if i[0] == week[day]:
+                for k in i[1]:
+                    if k == int(hour):
+                        return True
+        return False
 
 
 @router.post("/")
 def create_activity(activity: dict):
+    if activity['activity_type'] == "group":
+        for i in activity['owners']:
+            if check_conflict(activity['day'], activity['hour'], i):
+                raise HTTPException(status_code=400, detail="Time conflict.")
+    elif check_conflict(activity['day'], activity['hour'], activity['owner']):
+        raise HTTPException(status_code=400, detail="Time conflict.")
     max_id = get_max_activity_id(group_activities)
     activity_type = activity.get('activity_type')
     if not activity_type or activity_type not in ["group", "personal"]:

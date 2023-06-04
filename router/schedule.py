@@ -6,6 +6,12 @@ import util
 import re
 import logging
 
+from .courses import Course
+from .enrollments import Enrollment
+from .activities import Activity, load_activities
+
+week = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
 tags_metadata = [
     {
         "name": "add_schedule",
@@ -34,6 +40,12 @@ hash_table = [None] * HASH_TABLE_SIZE
 
 # JSON文件路径
 json_file = "schedules.json"
+
+COURSES_FILE = 'courses.json'
+ENROLLMENTS_FILE = 'enrollments.json'
+
+group_activities = load_activities('group_activities.json')
+personal_activities = load_activities('personal_activities.json')
 
 
 class Schedule:
@@ -112,11 +124,41 @@ class add_schedule(BaseModel):
     admin_person_id: str = None
 
 
+def check_conflict(day: int, hour: int, student_id: int):  # student_id course_id
+    courses = Course.from_json(COURSES_FILE)
+    enrollments = Enrollment.from_json(ENROLLMENTS_FILE)
+    stu_course = []
+    print(personal_activities)
+    student_id = int(student_id)
+    for enrollment in enrollments:
+        if enrollment.id == student_id:
+            stu_course = enrollment.course_id
+    for course in stu_course:  # (origin)course compare with (target)course_id
+        for i in courses[course].class_schedule:
+            day = int(day)
+            if i[0] == week[day]:
+                for k in i[1]:
+                    if k == int(hour):
+                        return True
+    for activity in personal_activities:
+        if int(activity['owner']) == int(student_id):
+            print(666)
+            if int(activity['day']) == int(day) and int(activity['hour']) == int(hour):
+                return True
+    for activity in group_activities:
+        if student_id in activity['owners']:
+            if int(activity['day']) == int(day) and int(activity['hour']) == int(hour):
+                return True
+    return False
+
+
 @router.post("/add_schedule", tags=["add_schedule"])
 def add_schedule(request: Request, addschedule: add_schedule):
     person_id = util.getUser(request)
     if person_id == 0:
         person_id = addschedule.admin_person_id
+    if check_conflict(addschedule.schedule[0]["day"], addschedule.schedule[0]["hour"], person_id):
+        raise HTTPException(status_code=400, detail="time conflict")
     print(person_id)
     index = hash_function(person_id)
     logger.info(f"added schedule for {person_id}")
@@ -142,6 +184,8 @@ def fuzzy_search_schedule(query, person_id):
             if re.search(query, name, re.IGNORECASE):
                 results.append(schedule)
     return results
+
+
 class search_schedule(BaseModel):  # type-name/starts/ends
     query: str
     admin_person_id: str = None

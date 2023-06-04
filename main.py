@@ -104,6 +104,7 @@ class Time(BaseModel):
 class Alarm(BaseModel):
     id: int = None
     note: str
+    type: str
     time: str
     frequency: str
     user: str = None
@@ -195,9 +196,6 @@ def check_alarms(request: Request):
     ringing_alarms = []
     time = str(time_simulator.current_hour)
     for alarm in alarms:
-        print(alarm)
-        print(get_current_day_of_week())
-        print(time)
         if alarm.user == util.getUser(request) and alarm.time == time and alarm.frequency == "single" \
                 and alarm.day == get_current_day_of_week() and alarm.week == time_simulator.current_week:
             ringing_alarms.append(alarm)
